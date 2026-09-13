@@ -1,0 +1,5 @@
+language: "ko-KR"
+reviews:
+  auto_review:
+    enabled: true
+  tone_instructions: "모든 코멘트, 요약, 설명은 반드시 한국어로 작성해 주세요."
