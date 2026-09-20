@@ -1,0 +1,21 @@
+.app {
+  width: 1440px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-page);
+}
+
+.movie-list-page {
+  flex: 1;
+  padding: 24px 80px 60px;
+}
+
+.movie-list-page__title {
+  font-size: 32px;
+  line-height: 44px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 20px;
+}
