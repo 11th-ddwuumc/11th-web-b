@@ -1,4 +1,3 @@
 package com.umc.movie.dto;
 
-public record EmailCheckResponse() {
-}
+public record EmailCheckResponse(boolean available) {}
