@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# TanStack
+.tanstack/
+
+# Logs
+*.log
