@@ -19,7 +19,7 @@ export default function Header() {
             </li>
 
             <li className="nav-item">
-              내 정보
+              <Link to="/my-page">내 정보</Link>
             </li>
           </ul>
         </nav>
@@ -30,9 +30,9 @@ export default function Header() {
           🔍
         </button>
 
-        <button type="button" className="login-btn">
+        <Link to="/login" className="login-btn">
           로그인
-        </button>
+        </Link>
       </div>
     </header>
   );

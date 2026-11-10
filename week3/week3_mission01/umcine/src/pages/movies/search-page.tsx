@@ -1,45 +1,39 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useState, type SubmitEvent } from "react"; // 1. useEffect 제거
-import { movies } from "../../data/movies";
+import { useQuery } from "@tanstack/react-query";
+import { useState, type FormEvent } from "react";
+import { searchMovies } from "../../api/movies/search-movies";
 
 export function SearchPage() {
   const { query } = useSearch({ from: "/search" });
   const navigate = useNavigate({ from: "/search" });
 
-  // 2. query와 마지막으로 수신한 query를 동기화하기 위한 state
-  const [prevQuery, setPrevQuery] = useState(query);
+  const normalizedQuery = query?.trim() ?? "";
+
+  // 검색 폼 input 제어용 local state
   const [searchText, setSearchText] = useState(query ?? "");
 
-  // 3. 렌더링 도중 URL query 변경 감지 시 즉시 상태 조정 (useEffect 없음)
-  if (prevQuery !== query) {
-    setPrevQuery(query);
-    setSearchText(query ?? "");
-  }
+  // URL query 파라미터를 기반으로 useQuery 실행
+  const searchQuery = useQuery({
+    queryKey: ["movies", "search", { query: normalizedQuery }],
+    queryFn: () => searchMovies({ query: normalizedQuery }),
+    enabled: normalizedQuery.length > 0,
+  });
 
-  // 검색 기능 (기존 코드 그대로 유지)
-  const normalizedQuery = query?.trim().toLowerCase() ?? "";
+  const searchResults = searchQuery.data?.results ?? [];
 
-  const searchResults = normalizedQuery
-    ? movies.filter(
-        (movie) =>
-          movie.title.toLowerCase().includes(normalizedQuery) ||
-          movie.originalTitle.toLowerCase().includes(normalizedQuery),
-      )
-    : [];
-
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextQuery = searchText.trim();
 
-    navigate({
+    void navigate({
       search: nextQuery ? { query: nextQuery } : {},
     });
   }
 
   return (
     <main className="search-page">
-      {/* 검색 영역 */}
+      {/* 검색 입력 폼 영역 */}
       <section className="search-work">
         <h1>어떤 영화를 찾고 있나요?</h1>
 
@@ -58,6 +52,7 @@ export function SearchPage() {
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
             >
               <circle
                 cx="11"
@@ -77,40 +72,71 @@ export function SearchPage() {
         </form>
       </section>
 
-      {/* 검색 결과 */}
+      {/* 검색 결과 영역 */}
       {normalizedQuery && (
         <section className="search-results">
           <div className="search-results-header">
-            <h2>‘{query}’ 검색 결과</h2>
-            <p>영화 {searchResults.length}편</p>
+            <h2>'{query}' 검색 결과</h2>
+
+            {searchQuery.isSuccess && (
+              <p>현재 표시된 영화 {searchResults.length}편</p>
+            )}
           </div>
 
-          {searchResults.length === 0 ? (
+          {searchQuery.isLoading ? (
+            <p className="search-loading" role="status">
+              검색 중이에요...
+            </p>
+          ) : searchQuery.isError ? (
+            <p className="search-error" role="alert">
+              {searchQuery.error instanceof Error
+                ? searchQuery.error.message
+                : "검색 결과를 불러오지 못했어요."}
+            </p>
+          ) : searchResults.length === 0 ? (
             <p className="search-empty">영화를 찾을 수 없어요.</p>
           ) : (
             <div className="search-result-grid">
-              {searchResults.map((movie) => (
-                <Link
-                  key={movie.id}
-                  to="/movies/$movieId"
-                  params={{ movieId: String(movie.id) }}
-                  className="search-result-card"
-                >
-                  <img src={movie.posterPath} alt={`${movie.title} 포스터`} />
+              {searchResults.map((movie) => {
+                const posterUrl = movie.poster_path
+                  ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                  : null;
 
-                  <div className="search-result-info">
-                    <h3>{movie.title}</h3>
+                return (
+                  <Link
+                    key={movie.id}
+                    to="/movies/$movieId"
+                    params={{
+                      movieId: String(movie.id),
+                    }}
+                    className="search-result-card"
+                  >
+                    {posterUrl ? (
+                      <img src={posterUrl} alt={`${movie.title} 포스터`} />
+                    ) : (
+                      <div className="poster-placeholder">
+                        포스터가 없습니다.
+                      </div>
+                    )}
 
-                    <p className="search-result-original">
-                      {movie.originalTitle}
-                    </p>
+                    <div className="search-result-info">
+                      <h3>{movie.title}</h3>
 
-                    <p className="search-result-date">{movie.releaseDate}</p>
+                      <p className="search-result-original">
+                        {movie.original_title}
+                      </p>
 
-                    <p className="search-result-overview">{movie.overview}</p>
-                  </div>
-                </Link>
-              ))}
+                      <p className="search-result-date">
+                        {movie.release_date || "개봉일 정보 없음"}
+                      </p>
+
+                      <p className="search-result-overview">
+                        {movie.overview || "등록된 줄거리가 없습니다."}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </section>
