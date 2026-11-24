@@ -1,0 +1,34 @@
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { login } from "../api/auth/login";
+import { useAuthStore } from "../stores/auth-store";
+
+export function useLoginMutation() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const setAccessToken = useAuthStore(
+    (state) => state.setAccessToken,
+  );
+
+  return useMutation({
+    mutationFn: login,
+
+    onSuccess: (response) => {
+      setAccessToken(response.result.accessToken);
+
+      queryClient.invalidateQueries({
+        queryKey: ["members", "me"],
+      });
+
+      alert("로그인에 성공했어요.");
+      void navigate({ to: "/" });
+    },
+
+    onError: (error) => {
+      console.error("로그인 실패 원인:", error);
+
+      alert("로그인 실패! F12 콘솔에서 오류를 확인해 주세요.");
+    },
+  });
+}
